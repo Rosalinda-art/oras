@@ -438,6 +438,16 @@ export function findNextAvailableTimeSlot(
   targetDate?: string, // Add target date for filtering deleted occurrences
   settings?: UserSettings // Add settings to get date-specific study window
 ): { start: string; end: string } | null {
+  // Early check: if there's a fixed all-day commitment for this date, no time slots are available
+  if (targetDate) {
+    const hasFixedAllDayCommitment = commitments.some(c =>
+      c.isFixed && c.isAllDay && doesCommitmentApplyToDate(c, targetDate)
+    );
+    if (hasFixedAllDayCommitment) {
+      return null; // No available time slots on this day
+    }
+  }
+
   // Use date-specific study window if available
   let effectiveStartHour = studyWindowStartHour;
   let effectiveEndHour = studyWindowEndHour;
