@@ -468,9 +468,12 @@ export function findNextAvailableTimeSlot(
   });
   
   activeCommitments.forEach(c => {
-    // Handle all-day events - removed blocking logic for work categories
+    // Handle all-day events - fixed commitments block all scheduling for the day
     if (c.isAllDay) {
-      // All-day events no longer block study session scheduling
+      if (c.isFixed) {
+        // Fixed all-day commitments block all study session scheduling
+        busyIntervals.push({ start: 0, end: 24 * 60 - 1 });
+      }
       return;
     }
     
