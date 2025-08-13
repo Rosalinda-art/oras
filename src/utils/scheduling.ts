@@ -1579,13 +1579,14 @@ export const generateNewStudyPlan = (
     const studyPlans: StudyPlan[] = [];
     const dailyRemainingHours: { [date: string]: number } = {};
     availableDays.forEach(date => {
-      dailyRemainingHours[date] = settings.dailyAvailableHours;
+      const actualAvailableHours = calculateDailyAvailableHours(date, settings.dailyAvailableHours, commitments, settings);
+      dailyRemainingHours[date] = actualAvailableHours;
       studyPlans.push({
         id: `plan-${date}`,
         date,
         plannedTasks: [],
         totalStudyHours: 0,
-        availableHours: settings.dailyAvailableHours
+        availableHours: actualAvailableHours
       });
     });
 
