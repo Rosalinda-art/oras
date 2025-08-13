@@ -22,6 +22,7 @@ const FixedCommitmentEdit: React.FC<FixedCommitmentEditProps> = ({ commitment, e
     location: commitment.location || '',
     description: commitment.description || '',
     isAllDay: commitment.isAllDay || false,
+    isFixed: commitment.isFixed || false,
     dateRange: {
       startDate: commitment.dateRange?.startDate || '',
       endDate: commitment.dateRange?.endDate || ''
@@ -94,7 +95,8 @@ const FixedCommitmentEdit: React.FC<FixedCommitmentEditProps> = ({ commitment, e
         category: formData.category,
         location: formData.location,
         description: formData.description,
-        isAllDay: formData.isAllDay
+        isAllDay: formData.isAllDay,
+        isFixed: formData.isFixed
       };
 
       // Only include startTime and endTime if not an all-day event
@@ -222,11 +224,28 @@ const FixedCommitmentEdit: React.FC<FixedCommitmentEditProps> = ({ commitment, e
             <input
               type="checkbox"
               checked={formData.isAllDay}
-              onChange={(e) => setFormData({ ...formData, isAllDay: e.target.checked })}
+              onChange={(e) => setFormData({ ...formData, isAllDay: e.target.checked, isFixed: e.target.checked ? formData.isFixed : false })}
               className="text-blue-600 focus:ring-blue-500"
             />
             <span>All-day event (no specific time)</span>
           </label>
+
+          {formData.isAllDay && (
+            <div className="mt-2 ml-6">
+              <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                <input
+                  type="checkbox"
+                  checked={formData.isFixed}
+                  onChange={(e) => setFormData({ ...formData, isFixed: e.target.checked })}
+                  className="text-red-600 focus:ring-red-500"
+                />
+                <span>Fixed commitment (no tasks will be scheduled on this day)</span>
+              </label>
+              <p className="text-xs text-gray-500 mt-1 ml-6 dark:text-gray-400">
+                When enabled, the scheduling system will not assign any study tasks on days with this commitment.
+              </p>
+            </div>
+          )}
         </div>
 
         {!formData.isAllDay && (
