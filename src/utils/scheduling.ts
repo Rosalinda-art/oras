@@ -108,10 +108,10 @@ export const doesCommitmentApplyToDate = (commitment: FixedCommitment, date: str
   if (commitment.recurring) {
     // For recurring commitments, check if the day of week matches
     const dayOfWeekMatches = commitment.daysOfWeek.includes(new Date(date).getDay());
-    
+
     // If day of week doesn't match, return false immediately
     if (!dayOfWeekMatches) return false;
-    
+
     // CRITICAL FIX: If there's a date range specified, the commitment ONLY applies within that range
     if (commitment.dateRange?.startDate && commitment.dateRange?.endDate) {
       // Only apply if the date is within the specified range
@@ -121,13 +121,61 @@ export const doesCommitmentApplyToDate = (commitment: FixedCommitment, date: str
       const inclusiveEndDate = endDateObj.toISOString().split('T')[0];
       return date >= commitment.dateRange.startDate && date < inclusiveEndDate;
     }
-    
+
     // No date range specified, so it applies to all dates with matching day of week
     return true;
   } else {
     // For non-recurring commitments, check if the specific date matches
     return commitment.specificDates?.includes(date) || false;
   }
+};
+
+// Calculate actual available hours for a specific date considering fixed commitments
+export const calculateDailyAvailableHours = (
+  date: string,
+  baseAvailableHours: number,
+  commitments: FixedCommitment[],
+  settings: UserSettings
+): number => {
+  // Filter commitments that apply to this date
+  const activeCommitments = commitments.filter(commitment =>
+    doesCommitmentApplyToDate(commitment, date)
+  );
+
+  // Check for fixed commitments that block the entire day
+  const hasFixedAllDayCommitment = activeCommitments.some(c =>
+    c.isFixed && c.isAllDay
+  );
+
+  if (hasFixedAllDayCommitment) {
+    return 0; // No study time available on this day
+  }
+
+  // Calculate hours blocked by fixed time-specific commitments
+  let blockedHours = 0;
+  activeCommitments.forEach(c => {
+    if (c.isFixed && !c.isAllDay && c.startTime && c.endTime) {
+      // Handle modified occurrences
+      let startTime = c.startTime;
+      let endTime = c.endTime;
+
+      if (c.modifiedOccurrences?.[date]) {
+        const modified = c.modifiedOccurrences[date];
+        if (modified.isAllDay) {
+          return 0; // Modified to all-day, blocks entire day
+        }
+        startTime = modified.startTime || startTime;
+        endTime = modified.endTime || endTime;
+      }
+
+      const [sh, sm] = startTime.split(":").map(Number);
+      const [eh, em] = endTime.split(":").map(Number);
+      const durationHours = (eh * 60 + em - sh * 60 - sm) / 60;
+      blockedHours += durationHours;
+    }
+  });
+
+  return Math.max(0, baseAvailableHours - blockedHours);
 };
 
 /**
