@@ -477,20 +477,24 @@ export function findNextAvailableTimeSlot(
       return;
     }
     
-    // Handle time-specific events
+    // Handle time-specific events - only block time for fixed commitments
+    if (!c.isFixed) {
+      return; // Non-fixed commitments don't block study time
+    }
+
     const [sh, sm] = c.startTime?.split(":").map(Number) || [0, 0];
     const [eh, em] = c.endTime?.split(":").map(Number) || [23, 59];
-    
+
     // Apply modifications if they exist for the target date
     if (targetDate && c.modifiedOccurrences?.[targetDate]) {
       const modified = c.modifiedOccurrences[targetDate];
-      
+
       // Check if the modified occurrence is an all-day event
       if (modified.isAllDay) {
         busyIntervals.push({ start: 0, end: 24 * 60 - 1 });
         return;
       }
-      
+
       if (modified.startTime) {
         const [msh, msm] = modified.startTime.split(":").map(Number);
         busyIntervals.push({ start: msh * 60 + (msm || 0), end: eh * 60 + (em || 0) });
